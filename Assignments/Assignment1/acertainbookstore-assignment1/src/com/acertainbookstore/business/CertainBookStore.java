@@ -2,6 +2,7 @@ package com.acertainbookstore.business;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -86,6 +87,17 @@ public class CertainBookStore implements BookStore, StockManager {
 	private synchronized void validate(BookEditorPick editorPickArg) throws BookStoreException {
 		int isbn = editorPickArg.getISBN();
 		validateISBNInStock(isbn); // Check if the book has valid ISBN and in stock
+	}
+
+	private synchronized void validate(BookRating bookRating) throws BookStoreException {
+		int isbn = bookRating.getISBN();
+		int rating = bookRating.getRating();
+
+		validateISBNInStock(isbn); // Check if the book has valid ISBN and in stock
+
+		if (BookStoreUtility.isInvalidRating(rating)) { // Check if the number of the book copy is larger than zero
+			throw new BookStoreException(BookStoreConstants.RATING + rating + BookStoreConstants.INVALID);
+		}
 	}
 
 	private synchronized void validateISBNInStock(Integer ISBN) throws BookStoreException {
@@ -317,7 +329,14 @@ public class CertainBookStore implements BookStore, StockManager {
 	 */
 	@Override
 	public synchronized List<Book> getTopRatedBooks(int numBooks) throws BookStoreException {
-		throw new BookStoreException();
+		if (numBooks < 0) {
+			throw new BookStoreException("numBooks = " + numBooks + ", but it must be positive");
+		}
+
+		// Get all books sorted by average rating
+        return bookMap.entrySet().stream().map(pair -> pair.getValue())
+                .sorted(Comparator.comparingDouble(BookStoreBook::getAverageRating).reversed()).limit(numBooks)
+                .map(BookStoreBook::immutableBook).collect(Collectors.toList());
 	}
 
 	/*
@@ -327,7 +346,9 @@ public class CertainBookStore implements BookStore, StockManager {
 	 */
 	@Override
 	public synchronized List<StockBook> getBooksInDemand() throws BookStoreException {
-		throw new BookStoreException();
+		Collection<BookStoreBook> bookMapValues = bookMap.values();
+
+		return bookMapValues.stream().filter(BookStoreBook::hadSaleMiss).map(book -> book.immutableStockBook()).collect(Collectors.toList());
 	}
 
 	/*
@@ -337,7 +358,22 @@ public class CertainBookStore implements BookStore, StockManager {
 	 */
 	@Override
 	public synchronized void rateBooks(Set<BookRating> bookRating) throws BookStoreException {
-		throw new BookStoreException();
+		if (bookRating == null) {
+			throw new BookStoreException(BookStoreConstants.NULL_INPUT);
+		}
+
+		// Validate the ratings.
+		for (BookRating bookRatingEntry : bookRating) {
+			validate(bookRatingEntry);
+		}
+
+		BookStoreBook book;
+
+		// Then add the ratings.
+		for (BookRating bookRatingEntry : bookRating) {
+			book = bookMap.get(bookRatingEntry.getISBN());
+			book.addRating(bookRatingEntry.getRating());
+		}
 	}
 
 	/*
