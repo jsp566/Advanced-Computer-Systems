@@ -453,15 +453,9 @@ public class BookStoreHTTPMessageHandler extends AbstractHandler {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	@SuppressWarnings("unchecked")
 	private void getBooksInDemand(HttpServletResponse response) throws IOException {
 		BookStoreResponse bookStoreResponse = new BookStoreResponse();
-
-		try {
-			bookStoreResponse.setList(myBookStore.getBooksInDemand());
-		} catch (BookStoreException ex) {
-			bookStoreResponse.setException(ex);
-		}
+		bookStoreResponse.setList(myBookStore.getBooksInDemand());
 
 		byte[] serializedResponseContent = serializer.get().serialize(bookStoreResponse);
 		response.getOutputStream().write(serializedResponseContent);
