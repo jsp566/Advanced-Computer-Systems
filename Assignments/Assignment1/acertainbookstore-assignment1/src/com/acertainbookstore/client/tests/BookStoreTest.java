@@ -38,7 +38,7 @@ public class BookStoreTest {
 	private static final int NUM_COPIES = 5;
 
 	/** The local test. */
-	private static boolean localTest = true;
+	private static boolean localTest = false;
 
 	/** The store manager. */
 	private static StockManager storeManager;
@@ -450,6 +450,43 @@ public class BookStoreTest {
 
 		assertTrue(bookInStore.getTotalRating() == 0);
 		assertTrue(bookInStore.getNumTimesRated() == 0);
+	}
+
+	@Test
+	public void testSemanticsBookRating() throws BookStoreException {
+
+		// Add a second book.
+		addBooks(TEST_ISBN + 1, NUM_COPIES);
+
+		Set<com.acertainbookstore.business.BookRating> bookRatings =
+				new HashSet<com.acertainbookstore.business.BookRating>();
+
+		// Add a valid rating for the first book.
+		bookRatings.add(
+				new com.acertainbookstore.business.BookRating(TEST_ISBN, 1));
+
+		// Add an invalid rating for the second book.
+		bookRatings.add(
+				new com.acertainbookstore.business.BookRating(TEST_ISBN + 1, -1));
+
+		try {
+			client.rateBooks(bookRatings);
+			fail();
+		} catch (BookStoreException ex) {
+			;
+		}
+
+		// Check that neither book was updated.
+		Set<Integer> isbnSet = new HashSet<Integer>();
+		isbnSet.add(TEST_ISBN);
+		isbnSet.add(TEST_ISBN + 1);
+
+		List<StockBook> booksInStore = storeManager.getBooksByISBN(isbnSet);
+
+		for (StockBook book : booksInStore) {
+			assertTrue(book.getTotalRating() == 0);
+			assertTrue(book.getNumTimesRated() == 0);
+		}
 	}
 
 	/**
