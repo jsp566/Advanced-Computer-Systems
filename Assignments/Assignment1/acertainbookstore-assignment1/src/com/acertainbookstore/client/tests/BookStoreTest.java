@@ -350,6 +350,109 @@ public class BookStoreTest {
 	}
 
 	/**
+	 * Tests whether a book can be rated correctly.
+	 *
+	 * @throws BookStoreException
+	 */
+	@Test
+	public void testRateBook() throws BookStoreException {
+
+		// Create a set of book ratings.
+		Set<com.acertainbookstore.business.BookRating> bookRatings =
+				new HashSet<com.acertainbookstore.business.BookRating>();
+
+		// Give the default book a rating of 4.
+		bookRatings.add(
+				new com.acertainbookstore.business.BookRating(TEST_ISBN, 4));
+
+		// Submit the rating.
+		client.rateBooks(bookRatings);
+
+		// Get the book from the bookstore.
+		Set<Integer> isbnSet = new HashSet<Integer>();
+		isbnSet.add(TEST_ISBN);
+
+		List<StockBook> booksInStore =
+				storeManager.getBooksByISBN(isbnSet);
+
+		StockBook bookInStore = booksInStore.get(0);
+
+		// Check that the rating was registered.
+		assertTrue(bookInStore.getTotalRating() == 4);
+		assertTrue(bookInStore.getNumTimesRated() == 1);
+		assertTrue(bookInStore.getAverageRating() == 4.0);
+	}
+
+	/**
+	 * Tests whether multiple ratings are accumulated correctly.
+	 *
+	 * @throws BookStoreException
+	 */
+	@Test
+	public void testMultipleBookRatings() throws BookStoreException {
+
+		// Add the first rating.
+		Set<com.acertainbookstore.business.BookRating> bookRatings =
+				new HashSet<com.acertainbookstore.business.BookRating>();
+
+		bookRatings.add(
+				new com.acertainbookstore.business.BookRating(TEST_ISBN, 4));
+
+		client.rateBooks(bookRatings);
+
+		// Add the second rating.
+		bookRatings = new HashSet<com.acertainbookstore.business.BookRating>();
+
+		bookRatings.add(
+				new com.acertainbookstore.business.BookRating(TEST_ISBN, 2));
+
+		client.rateBooks(bookRatings);
+
+		// Get the book from the bookstore.
+		Set<Integer> isbnSet = new HashSet<Integer>();
+		isbnSet.add(TEST_ISBN);
+
+		List<StockBook> booksInStore =
+				storeManager.getBooksByISBN(isbnSet);
+
+		StockBook bookInStore = booksInStore.get(0);
+
+		// Check the accumulated ratings.
+		assertTrue(bookInStore.getTotalRating() == 6);
+		assertTrue(bookInStore.getNumTimesRated() == 2);
+		assertTrue(bookInStore.getAverageRating() == 3.0);
+	}
+
+	/**
+	 * Tests whether negative ratings are rejected.
+	 *
+	 * @throws BookStoreException
+	 */
+	@Test
+	public void testNegativeBookRating() throws BookStoreException {
+
+		Set<com.acertainbookstore.business.BookRating> bookRatings =
+				new HashSet<com.acertainbookstore.business.BookRating>();
+
+		// Add a negative rating.
+		bookRatings.add(
+				new com.acertainbookstore.business.BookRating(TEST_ISBN, -1));
+		try {
+			client.rateBooks(bookRatings);
+			fail();
+		} catch (BookStoreException ex) {
+			;
+		}
+
+		// Check that the book was not updated.
+		List<StockBook> booksInStore = storeManager.getBooks();
+		StockBook bookInStore = booksInStore.get(0);
+
+		assertTrue(bookInStore.getTotalRating() == 0);
+		assertTrue(bookInStore.getNumTimesRated() == 0);
+	}
+
+	/**
 	 * Tear down after class.
 	 *
 	 * @throws BookStoreException
