@@ -511,8 +511,6 @@ public class StockManagerTest {
 		// Try to buy books
 		client.buyBooks(booksToBuy);
 
-
-
 		booksInDemand = storeManager.getBooksInDemand();
 		StockBook bookInList = booksInDemand.get(0);
 		StockBook addedBook = getDefaultBook();
