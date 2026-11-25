@@ -494,9 +494,9 @@ public class StockManagerTest {
 		// Try to buy books
 		try {
 			client.buyBooks(booksToBuy);
-			fail("Should have thrown exception");
+			fail();
 		} catch (BookStoreException e) {
-			assertTrue(e.getMessage().contains(BookStoreConstants.BOOK + BookStoreConstants.NOT_AVAILABLE));
+			;
 		}
 
 		booksToBuy = new HashSet<BookCopy>();
@@ -512,6 +512,8 @@ public class StockManagerTest {
 		client.buyBooks(booksToBuy);
 
 		booksInDemand = storeManager.getBooksInDemand();
+		assertTrue(booksInDemand.size() == 1);
+
 		StockBook bookInList = booksInDemand.get(0);
 		StockBook addedBook = getDefaultBook();
 

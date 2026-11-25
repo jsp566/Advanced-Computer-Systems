@@ -452,6 +452,11 @@ public class BookStoreTest {
 		assertTrue(bookInStore.getNumTimesRated() == 0);
 	}
 
+	/**
+	 * Tests whether all or nothing for ratebooks.
+	 *
+	 * @throws BookStoreException
+	 */
 	@Test
 	public void testSemanticsBookRating() throws BookStoreException {
 
@@ -487,6 +492,62 @@ public class BookStoreTest {
 			assertTrue(book.getTotalRating() == 0);
 			assertTrue(book.getNumTimesRated() == 0);
 		}
+	}
+
+	/**
+	 * Tests get top rated books.
+	 *
+	 * @throws BookStoreException
+	 */
+	@Test
+	public void testGetTopRatedBooks() throws BookStoreException {
+		Set<StockBook> booksToAdd = new HashSet<StockBook>();
+		StockBook book1 = new ImmutableStockBook(TEST_ISBN + 1, "The Art of Computer Programming", "Donald Knuth",
+				(float) 300, NUM_COPIES, 0, 0, 0, false);
+		StockBook book2 = new ImmutableStockBook(TEST_ISBN + 2, "The C Programming Language",
+				"Dennis Ritchie and Brian Kerninghan", (float) 50, NUM_COPIES, 0, 0, 0, false);
+		booksToAdd.add(book1);
+		booksToAdd.add(book2);
+
+		storeManager.addBooks(booksToAdd);
+
+		// Add the first rating.
+		Set<com.acertainbookstore.business.BookRating> bookRatings =
+				new HashSet<com.acertainbookstore.business.BookRating>();
+
+		bookRatings.add(
+				new com.acertainbookstore.business.BookRating(TEST_ISBN, 4));
+
+		bookRatings.add(
+				new com.acertainbookstore.business.BookRating(TEST_ISBN + 1, 2));
+
+		bookRatings.add(
+				new com.acertainbookstore.business.BookRating(TEST_ISBN + 2, 2));
+
+		client.rateBooks(bookRatings);
+
+		List<Book> topRatedBooks = client.getTopRatedBooks(0);
+		assertTrue(topRatedBooks.size() == 0);
+
+		topRatedBooks = client.getTopRatedBooks(1);
+		assertTrue(topRatedBooks.size() == 1 && topRatedBooks.contains(getDefaultBook()));
+
+		topRatedBooks = client.getTopRatedBooks(2);
+		assertTrue(topRatedBooks.size() == 2 && topRatedBooks.contains(getDefaultBook()) && (topRatedBooks.contains(book1) ||  topRatedBooks.contains(book2)));
+
+		topRatedBooks = client.getTopRatedBooks(3);
+		assertTrue(topRatedBooks.containsAll(booksToAdd) && topRatedBooks.size() == 3 && topRatedBooks.contains(getDefaultBook()));
+
+		topRatedBooks = client.getTopRatedBooks(4);
+		assertTrue(topRatedBooks.containsAll(booksToAdd) && topRatedBooks.size() == 3 && topRatedBooks.contains(getDefaultBook()));
+
+		try {
+			topRatedBooks = client.getTopRatedBooks(-1);
+			fail();
+		} catch (BookStoreException ex) {
+			;
+		}
+		;
 	}
 
 	/**
