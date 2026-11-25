@@ -470,6 +470,63 @@ public class StockManagerTest {
 	}
 
 	/**
+	 * Tests basic testGetBooksInDemand functionality.
+	 *
+	 * @throws BookStoreException
+	 *             the book store exception
+	 */
+	@Test
+	public void testGetBooksInDemand() throws BookStoreException {
+		Set<StockBook> booksToAdd = new HashSet<StockBook>();
+		booksToAdd.add(new ImmutableStockBook(TEST_ISBN + 1, "The Art of Computer Programming", "Donald Knuth",
+				(float) 300, NUM_COPIES, 0, 0, 0, false));
+		booksToAdd.add(new ImmutableStockBook(TEST_ISBN + 2, "The C Programming Language",
+				"Dennis Ritchie and Brian Kerninghan", (float) 50, NUM_COPIES, 0, 0, 0, false));
+		storeManager.addBooks(booksToAdd);
+
+		List<StockBook> booksInDemand = storeManager.getBooksInDemand();
+		assertTrue(booksInDemand.size() == 0);
+
+		// Set of books to buy
+		Set<BookCopy> booksToBuy = new HashSet<BookCopy>();
+		booksToBuy.add(new BookCopy(TEST_ISBN, NUM_COPIES + 1));
+
+		// Try to buy books
+		try {
+			client.buyBooks(booksToBuy);
+			fail("Should have thrown exception");
+		} catch (BookStoreException e) {
+			assertTrue(e.getMessage().contains(BookStoreConstants.BOOK + BookStoreConstants.NOT_AVAILABLE));
+		}
+
+		booksToBuy = new HashSet<BookCopy>();
+		booksToBuy.add(new BookCopy(TEST_ISBN + 1, NUM_COPIES));
+
+		// Try to buy books
+		client.buyBooks(booksToBuy);
+
+		booksToBuy = new HashSet<BookCopy>();
+		booksToBuy.add(new BookCopy(TEST_ISBN + 2, NUM_COPIES - 1));
+
+		// Try to buy books
+		client.buyBooks(booksToBuy);
+
+
+
+		booksInDemand = storeManager.getBooksInDemand();
+		StockBook bookInList = booksInDemand.get(0);
+		StockBook addedBook = getDefaultBook();
+
+		assertTrue(bookInList.getISBN() == addedBook.getISBN() && bookInList.getTitle().equals(addedBook.getTitle())
+				&& bookInList.getAuthor().equals(addedBook.getAuthor()) && bookInList.getPrice() == addedBook.getPrice()
+				&& bookInList.getNumSaleMisses() == 1
+				&& bookInList.getAverageRating() == addedBook.getAverageRating()
+				&& bookInList.getNumTimesRated() == addedBook.getNumTimesRated()
+				&& bookInList.getTotalRating() == addedBook.getTotalRating()
+				&& bookInList.isEditorPick() == addedBook.isEditorPick());
+	}
+
+	/**
 	 * Tear down after class.
 	 *
 	 * @throws BookStoreException
